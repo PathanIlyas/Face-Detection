@@ -1,0 +1,303 @@
+{% extends "security/base.html" %}
+
+{% block title %}Security Logs | AI Security{% endblock %}
+{% block page_title %}Security Logs & History{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Filters Form Layout */
+    .filter-panel {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--card-radius);
+        padding: 24px;
+        box-shadow: 0 4px 20px var(--shadow-primary);
+        margin-bottom: 32px;
+    }
+
+    .filter-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 20px;
+        align-items: flex-end;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-group label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        letter-spacing: 0.5px;
+    }
+
+    .form-control {
+        background-color: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 10px 14px;
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 0.9rem;
+        outline: none;
+        transition: border-color var(--transition-speed);
+    }
+
+    .form-control:focus {
+        border-color: var(--accent-primary);
+    }
+
+    .btn-submit {
+        background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+        color: #000;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-submit:hover {
+        opacity: 0.9;
+    }
+
+    .btn-clear {
+        background-color: var(--bg-tertiary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        text-decoration: none;
+        text-align: center;
+        padding: 10px 14px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: background-color var(--transition-speed);
+    }
+
+    .btn-clear:hover {
+        background-color: #ff3b30;
+        color: white;
+        border-color: #ff3b30;
+    }
+
+    /* Logs Table panel */
+    .logs-panel {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--card-radius);
+        padding: 24px;
+        box-shadow: 0 4px 20px var(--shadow-primary);
+        margin-bottom: 32px;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.9rem;
+    }
+
+    .custom-table th, .custom-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .custom-table th {
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+
+    .custom-table tr:hover td {
+        background-color: var(--bg-tertiary);
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-camera {
+        background-color: var(--bg-tertiary);
+        color: var(--accent-primary);
+        border: 1px solid rgba(0, 215, 255, 0.2);
+    }
+
+    .confidence-value {
+        font-weight: 600;
+        color: var(--accent-secondary);
+    }
+
+    .btn-screenshot {
+        color: var(--accent-primary);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color var(--transition-speed);
+    }
+
+    .btn-screenshot:hover {
+        color: var(--accent-secondary);
+        text-decoration: underline;
+    }
+
+    /* Pagination layout */
+    .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .pagination-info {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .pagination-controls {
+        display: flex;
+        gap: 8px;
+    }
+
+    .page-link {
+        background-color: var(--bg-tertiary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all var(--transition-speed);
+    }
+
+    .page-link:hover {
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+    }
+
+    .page-link.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Form Panel -->
+<div class="filter-panel">
+    <form method="GET" action="{% url 'logs' %}" class="filter-form">
+        <!-- Search query -->
+        <div class="form-group">
+            <label for="search">General Search</label>
+            <input type="text" name="search" id="search" class="form-control" placeholder="Search ID or camera..." value="{{ search_query }}">
+        </div>
+
+        <!-- Camera filter -->
+        <div class="form-group">
+            <label for="camera">Camera</label>
+            <select name="camera" id="camera" class="form-control">
+                <option value="">-- All Cameras --</option>
+                {% for cam in cameras %}
+                <option value="{{ cam.id }}" {% if selected_camera == cam.id|slugify %}selected{% endif %}>{{ cam.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Track ID filter -->
+        <div class="form-group">
+            <label for="track_id">Track ID</label>
+            <input type="number" name="track_id" id="track_id" class="form-control" placeholder="e.g. 5" value="{{ selected_track }}">
+        </div>
+
+        <!-- Date filter -->
+        <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" name="date" id="date" class="form-control" value="{{ selected_date }}">
+        </div>
+
+        <!-- Submit actions -->
+        <div class="form-group" style="display: flex; flex-direction: row; gap: 8px;">
+            <button type="submit" class="form-control btn-submit" style="flex-grow: 1;">Apply</button>
+            <a href="{% url 'logs' %}" class="btn-clear" style="flex-grow: 1;">Clear</a>
+        </div>
+    </form>
+</div>
+
+<!-- Logs List Panel -->
+<div class="logs-panel">
+    <div class="table-container">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Log ID</th>
+                    <th>Track ID</th>
+                    <th>Camera</th>
+                    <th>Confidence</th>
+                    <th>Timestamp</th>
+                    <th>Screenshot</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in page_obj %}
+                <tr>
+                    <td style="color: var(--text-secondary);">#{{ log.id }}</td>
+                    <td style="font-weight: 600;">ID: {{ log.track_id }}</td>
+                    <td><span class="badge badge-camera">{{ log.camera.name }}</span></td>
+                    <td><span class="confidence-value">{{ log.confidence|floatformat:2 }}</span></td>
+                    <td style="color: var(--text-secondary);">{{ log.detected_at|date:"Y-m-d H:i:s" }}</td>
+                    <td>
+                        {% if log.screenshot_path %}
+                        <a href="{{ log.screenshot_path }}" target="_blank" class="btn-screenshot">View Image</a>
+                        {% else %}
+                        <span style="color: var(--text-secondary); font-style: italic;">No Image</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 40px;">
+                        No logs match the selected filter criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination">
+        <span class="pagination-info">
+            Showing logs {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ page_obj.paginator.count }} total logs
+        </span>
+        <div class="pagination-controls">
+            <!-- Prev page link -->
+            <a href="?page={% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %}&search={{ search_query }}&camera={{ selected_camera }}&track_id={{ selected_track }}&date={{ selected_date }}"
+               class="page-link {% if not page_obj.has_previous %}disabled{% endif %}">
+                Previous
+            </a>
+            
+            <!-- Next page link -->
+            <a href="?page={% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ page_obj.number }}{% endif %}&search={{ search_query }}&camera={{ selected_camera }}&track_id={{ selected_track }}&date={{ selected_date }}"
+               class="page-link {% if not page_obj.has_next %}disabled{% endif %}">
+                Next
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,432 @@
+{% extends "security/base.html" %}
+
+{% block title %}Dashboard | AI Security{% endblock %}
+{% block page_title %}Security Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 24px;
+        margin-bottom: 40px;
+    }
+
+    .stat-card {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--card-radius);
+        padding: 24px;
+        box-shadow: 0 4px 20px var(--shadow-primary);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 120px;
+        transition: transform 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent-primary);
+    }
+
+    .stat-title {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-top: 12px;
+        background: linear-gradient(90deg, #fff, var(--text-secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Dashboard Layout Grid */
+    .dashboard-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 32px;
+        margin-bottom: 40px;
+    }
+
+    @media (max-width: 1024px) {
+        .dashboard-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* General Panel Container */
+    .panel {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--card-radius);
+        padding: 24px;
+        box-shadow: 0 4px 20px var(--shadow-primary);
+        margin-bottom: 32px;
+    }
+
+    .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 12px;
+    }
+
+    .panel-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+    }
+
+    /* Live Feed Component */
+    .live-feed-placeholder {
+        background-color: #000;
+        border: 2px dashed var(--border-color);
+        border-radius: 8px;
+        aspect-ratio: 16/9;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .live-feed-placeholder::before {
+        content: 'LIVE';
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        background-color: var(--accent-error);
+        color: white;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        border-radius: 4px;
+        letter-spacing: 1px;
+    }
+
+    .feed-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background-color: var(--bg-tertiary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        margin-bottom: 16px;
+        color: var(--accent-primary);
+    }
+
+    /* Table Component */
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.9rem;
+    }
+
+    .custom-table th, .custom-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .custom-table th {
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+
+    .custom-table tr:hover td {
+        background-color: var(--bg-tertiary);
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-camera {
+        background-color: var(--bg-tertiary);
+        color: var(--accent-primary);
+        border: 1px solid rgba(0, 215, 255, 0.2);
+    }
+
+    .confidence-value {
+        font-weight: 600;
+        color: var(--accent-secondary);
+    }
+
+    /* Gallery Grid */
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 20px;
+    }
+
+    .gallery-item {
+        background-color: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.2s;
+    }
+
+    .gallery-item:hover {
+        transform: scale(1.03);
+        border-color: var(--accent-primary);
+    }
+
+    .gallery-img-wrapper {
+        aspect-ratio: 4/3;
+        width: 100%;
+        background-color: #000;
+        overflow: hidden;
+    }
+
+    .gallery-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.85;
+        transition: opacity 0.2s;
+    }
+
+    .gallery-img:hover {
+        opacity: 1;
+    }
+
+    .gallery-meta {
+        padding: 10px;
+        font-size: 0.75rem;
+    }
+
+    .gallery-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .gallery-time {
+        color: var(--text-secondary);
+    }
+
+    /* System Status / Camera Health List */
+    .status-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .status-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background-color: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+    }
+
+    .camera-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .camera-name {
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+
+    .camera-last-seen {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    .status-pill {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 12px;
+    }
+
+    .status-pill.online {
+        background-color: rgba(0, 255, 135, 0.1);
+        color: var(--accent-secondary);
+        border: 1px solid rgba(0, 255, 135, 0.2);
+    }
+
+    .status-pill.offline {
+        background-color: rgba(255, 59, 48, 0.1);
+        color: var(--accent-error);
+        border: 1px solid rgba(255, 59, 48, 0.2);
+    }
+
+    .indicator-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+    }
+
+    .online .indicator-dot {
+        background-color: var(--accent-secondary);
+    }
+
+    .offline .indicator-dot {
+        background-color: var(--accent-error);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Cards Section -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-title">Total Detections</span>
+        <span class="stat-value">{{ total_detections }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-title">Active Persons</span>
+        <span class="stat-value">{{ active_persons }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-title">Today's Detections</span>
+        <span class="stat-value">{{ today_detections }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-title">Cameras Active</span>
+        <span class="stat-value">{{ cameras_online }} <span style="font-size: 1rem; color: var(--text-secondary);">/ {{ total_cameras }}</span></span>
+    </div>
+</div>
+
+<!-- Main Layout -->
+<div class="dashboard-layout">
+    <!-- Left Column: Video & Detections -->
+    <div class="left-col">
+        <!-- Live Video Block -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Active Surveillance Feed</h2>
+                <span class="badge badge-camera">{% if cameras_list %}{{ cameras_list.0.name }}{% else %}No Camera Registered{% endif %}</span>
+            </div>
+            <div class="live-feed-placeholder">
+                <div class="feed-icon">🎥</div>
+                <p style="font-weight: 500; margin-bottom: 4px;">Live Video Feed Online</p>
+                <span style="font-size: 0.8rem; color: var(--text-secondary);">Processing via YOLOv8 & TensorRT @ 25+ FPS</span>
+            </div>
+        </div>
+
+        <!-- Recent Logs Table -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Recent Detections</h2>
+            </div>
+            <div class="table-container">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Track ID</th>
+                            <th>Camera</th>
+                            <th>Confidence</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in recent_detections %}
+                        <tr>
+                            <td style="font-weight: 600;">ID: {{ log.track_id }}</td>
+                            <td><span class="badge badge-camera">{{ log.camera.name }}</span></td>
+                            <td><span class="confidence-value">{{ log.confidence|floatformat:2 }}</span></td>
+                            <td style="color: var(--text-secondary);">{{ log.detected_at|date:"Y-m-d H:i:s" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-secondary); padding: 30px;">
+                                No detections logged yet. Start the tracker script to begin recording.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Status & Screenshots -->
+    <div class="right-col">
+        <!-- System Status List -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">System Status</h2>
+            </div>
+            <div class="status-list">
+                {% for camera in cameras_list %}
+                <div class="status-item">
+                    <div class="camera-meta">
+                        <span class="camera-name">{{ camera.name }}</span>
+                        <span class="camera-last-seen">Last Seen: {{ camera.last_seen_at|date:"H:i:s"|default:"Never" }}</span>
+                    </div>
+                    <span class="status-pill {{ camera.status }}">
+                        <span class="indicator-dot"></span>
+                        {{ camera.status|upper }}
+                    </span>
+                </div>
+                {% empty %}
+                <div style="text-align: center; color: var(--text-secondary); padding: 10px;">
+                    No cameras configured.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Screenshot Gallery -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Alert Capture Gallery</h2>
+            </div>
+            <div class="gallery-grid">
+                {% for log in gallery_detections %}
+                <div class="gallery-item">
+                    <div class="gallery-img-wrapper">
+                        <img src="{{ log.screenshot_path }}" class="gallery-img" alt="Track {{ log.track_id }} capture">
+                    </div>
+                    <div class="gallery-meta">
+                        <div class="gallery-title">Track ID: {{ log.track_id }}</div>
+                        <div class="gallery-time">{{ log.detected_at|date:"H:i:s" }}</div>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align: center; color: var(--text-secondary); padding: 20px; grid-column: 1 / -1;">
+                    No screenshot captures available.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

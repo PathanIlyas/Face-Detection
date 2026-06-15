@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Security System{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #121824;
+            --bg-tertiary: #1b2336;
+            --accent-primary: #00d7ff; /* Neon cyan */
+            --accent-secondary: #00ff87; /* Neon green */
+            --accent-error: #ff3b30; /* Bright red */
+            --text-primary: #f5f6f8;
+            --text-secondary: #8e9bb2;
+            --border-color: #243048;
+            --shadow-primary: rgba(0, 0, 0, 0.4);
+            --card-radius: 12px;
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Container */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+            transition: width var(--transition-speed);
+        }
+
+        .sidebar-brand {
+            padding: 30px 24px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .brand-logo {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 8px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #000;
+        }
+
+        .brand-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-grow: 1;
+        }
+
+        .menu-item a {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--card-radius);
+            font-weight: 500;
+            transition: all var(--transition-speed);
+        }
+
+        .menu-item a:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-tertiary);
+        }
+
+        .menu-item.active a {
+            color: #000;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            font-weight: 600;
+        }
+
+        .sidebar-user {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .user-role {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .btn-logout {
+            display: inline-block;
+            text-align: center;
+            padding: 10px;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: all var(--transition-speed);
+        }
+
+        .btn-logout:hover {
+            background-color: var(--accent-error);
+            color: white;
+            border-color: var(--accent-error);
+        }
+
+        /* Main Content wrapper */
+        .main-container {
+            margin-left: 260px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Top Header */
+        .header {
+            height: 80px;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .system-status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: var(--bg-tertiary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--accent-secondary);
+            box-shadow: 0 0 10px var(--accent-secondary);
+            animation: pulse 1.8s infinite;
+        }
+
+        /* Content Body */
+        .content {
+            padding: 40px;
+            flex-grow: 1;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 24px 40px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-secondary);
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.9);
+                opacity: 0.7;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+                box-shadow: 0 0 14px var(--accent-secondary);
+            }
+            100% {
+                transform: scale(0.9);
+                opacity: 0.7;
+            }
+        }
+
+        /* Responsive styling */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 70px;
+            }
+            .brand-name, .user-info, .btn-logout span {
+                display: none;
+            }
+            .sidebar-brand, .sidebar-user {
+                justify-content: center;
+                padding: 20px 0;
+            }
+            .sidebar-menu {
+                padding: 20px 8px;
+            }
+            .menu-item a {
+                justify-content: center;
+                padding: 12px 0;
+            }
+            .menu-item a span {
+                display: none;
+            }
+            .main-container {
+                margin-left: 70px;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">S</div>
+            <span class="brand-name">AI SECURITY</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-item {% if request.path == '/' %}active{% endif %}">
+                <a href="{% url 'dashboard' %}">
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="menu-item {% if '/logs/' in request.path %}active{% endif %}">
+                <a href="{% url 'logs' %}">
+                    <span>Security Logs</span>
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-user">
+            <div class="user-info">
+                <span class="user-name">{{ request.user.username|capfirst }}</span>
+                <span class="user-role">Operator</span>
+            </div>
+            <a href="{% url 'logout' %}" class="btn-logout">
+                <span>Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="main-container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="page-title">{% block page_title %}Surveillance Center{% endblock %}</h1>
+            <div class="system-status-indicator">
+                <div class="pulse-dot"></div>
+                <span>Security Engine Active</span>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            &copy; 2026 AI Surveillance Systems. All rights reserved.
+        </footer>
+    </div>
+</body>
+</html>
